@@ -1,21 +1,19 @@
 /* ═══════════════════════════════════════════════════════════
-   MALAGA – admin.js
-   Panneau d'administration : Auth, Firestore, IA
+   MALAGA – admin.js (SIMPLIFIÉ)
+   Panneau d'administration en mode démo (sans Firebase)
 ═══════════════════════════════════════════════════════════ */
 
 'use strict';
 
-/* ── Email admin autorisé ── */
 const ADMIN_EMAIL = 'malaga.gabon@gmail.com';
 
-/* ── Données mock pour démo (remplacées par Firestore) ── */
+// Mock data
 const MOCK_ANNONCES = [
-  { id:'ann001', titre:'Belle villa meublée avec jardin', type:'Villa', ville:'Libreville', quartier:'Akanda', prix:350000, vues:842, statut:'disponible', proprio:'Jean Mbadinga', tel:'+24166580032' },
-  { id:'ann002', titre:'Appartement 3 pièces climatisé', type:'Appartement', ville:'Libreville', quartier:'Batterie IV', prix:150000, vues:631, statut:'disponible', proprio:'Marie Ondo', tel:'+24177001122' },
-  { id:'ann003', titre:'Studio moderne avec forage', type:'Studio', ville:'Libreville', quartier:'Owendo', prix:65000, vues:287, statut:'disponible', proprio:'Paul Nze', tel:'+24166123456' },
-  { id:'ann004', titre:'Maison 5 pièces groupe électrogène', type:'Maison', ville:'Port-Gentil', quartier:'Ozouri', prix:200000, vues:445, statut:'réservé', proprio:'Sophie Moukagni', tel:'+24177654321' },
-  { id:'ann005', titre:'Villa standing avec piscine', type:'Villa', ville:'Libreville', quartier:'Angondjé', prix:600000, vues:1203, statut:'disponible', proprio:'Eric Boulingui', tel:'+24166789012' },
-  { id:'ann006', titre:'Appartement 2 pièces semi-meublé', type:'Appartement', ville:'Franceville', quartier:'Centre-ville', prix:100000, vues:189, statut:'loué', proprio:'Claire Ibinga', tel:'+24177345678' },
+  { id:'ann001', titre:'Belle villa meublée avec jardin', type:'Villa', ville:'Libreville', quartier:'Akanda', prix:350000, vues:842, statut:'disponible', proprio:'Jean Mbadinga', tel:'+24166580032', surface:180, chambres:4, sdb:2 },
+  { id:'ann002', titre:'Appartement 3 pièces climatisé', type:'Appartement', ville:'Libreville', quartier:'Batterie IV', prix:150000, vues:631, statut:'disponible', proprio:'Marie Ondo', tel:'+24177001122', surface:75, chambres:2, sdb:1 },
+  { id:'ann003', titre:'Studio moderne avec forage', type:'Studio', ville:'Libreville', quartier:'Owendo', prix:65000, vues:287, statut:'disponible', proprio:'Paul Nze', tel:'+24166123456', surface:28, chambres:1, sdb:1 },
+  { id:'ann004', titre:'Maison 5 pièces', type:'Maison', ville:'Port-Gentil', quartier:'Ozouri', prix:200000, vues:445, statut:'réservé', proprio:'Sophie Moukagni', tel:'+24177654321', surface:120, chambres:3, sdb:2 },
+  { id:'ann005', titre:'Villa standing avec piscine', type:'Villa', ville:'Libreville', quartier:'Angondjé', prix:600000, vues:1203, statut:'disponible', proprio:'Eric Boulingui', tel:'+24166789012', surface:250, chambres:5, sdb:3 },
 ];
 
 const MOCK_USERS = [
@@ -36,7 +34,6 @@ const MOCK_MESSAGES = [
   { date:'11 juin 2026', nom:'Fatou Diallo', tel:'+24177223344', sujet:'Problème technique', msg:'Je n\'arrive pas à publier mon annonce depuis hier soir.' },
 ];
 
-/* ── État global ── */
 let currentUser = null;
 let annoncesData = [...MOCK_ANNONCES];
 let usersData = [...MOCK_USERS];
@@ -44,9 +41,9 @@ let signalementsData = [...MOCK_SIGNALEMENTS];
 let messagesData = [...MOCK_MESSAGES];
 let theme = localStorage.getItem('malaga_admin_theme') || 'light';
 
-/* ══════════════════════════════
+/* ══════════════════════════════════════════════════════════
    INITIALISATION
-══════════════════════════════ */
+══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initTopbarDate();
@@ -54,39 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
 });
 
-/* ══════════════════════════════
-   AUTH FIREBASE
-══════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   AUTHENTIFICATION
+══════════════════════════════════════════════════════════ */
 function checkAuth() {
-  if (typeof firebase === 'undefined') {
-    // Mode démo sans Firebase
-    showLoginIfNeeded();
-    return;
-  }
-  firebase.auth().onAuthStateChanged(user => {
-    if (user && user.email === ADMIN_EMAIL) {
-      currentUser = user;
-      onLoginSuccess(user);
-    } else if (user) {
-      // Connecté mais pas admin
-      firebase.auth().signOut();
-      showLoginError('Accès réservé à l\'administrateur MALAGA.');
-    } else {
-      showLoginIfNeeded();
-    }
-  });
-}
-
-function showLoginIfNeeded() {
   const saved = sessionStorage.getItem('malaga_admin_demo');
   if (saved) {
-    onLoginSuccess({ email: saved, displayName: 'Administrateur' });
+    onLoginSuccess({ email: saved, displayName: 'KOZANGUE Patrick' });
   } else {
     document.getElementById('loginOverlay').classList.remove('hidden');
   }
 }
 
-async function adminLogin() {
+function adminLogin() {
   const email = document.getElementById('adminEmail').value.trim();
   const password = document.getElementById('adminPassword').value;
   const btn = document.getElementById('loginBtnText');
@@ -101,21 +78,7 @@ async function adminLogin() {
   btn.textContent = '⏳ Connexion...';
   errEl.classList.add('hidden');
 
-  if (typeof firebase !== 'undefined') {
-    try {
-      const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-      if (cred.user.email !== ADMIN_EMAIL) {
-        await firebase.auth().signOut();
-        throw new Error('Non autorisé');
-      }
-      onLoginSuccess(cred.user);
-    } catch (err) {
-      errEl.textContent = '❌ Email ou mot de passe incorrect';
-      errEl.classList.remove('hidden');
-      btn.textContent = 'Se connecter';
-    }
-  } else {
-    // Mode démo
+  setTimeout(() => {
     if (email === ADMIN_EMAIL && password.length >= 6) {
       sessionStorage.setItem('malaga_admin_demo', email);
       onLoginSuccess({ email, displayName: 'KOZANGUE Patrick' });
@@ -124,577 +87,271 @@ async function adminLogin() {
       errEl.classList.remove('hidden');
       btn.textContent = 'Se connecter';
     }
-  }
+  }, 500);
 }
 
 function onLoginSuccess(user) {
+  currentUser = user;
   document.getElementById('loginOverlay').classList.add('hidden');
-  document.getElementById('adminName').textContent = user.displayName || 'Administrateur';
+  document.getElementById('adminName').textContent = user.displayName || 'Admin';
   document.getElementById('adminEmailDisplay').textContent = user.email || '';
   loadDashboard();
 }
 
-function showLoginError(msg) {
-  const el = document.getElementById('loginError');
-  el.textContent = msg;
-  el.classList.remove('hidden');
-}
-
 function adminLogout() {
-  confirmer('Déconnexion', 'Voulez-vous vous déconnecter ?', () => {
+  if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
     sessionStorage.removeItem('malaga_admin_demo');
-    if (typeof firebase !== 'undefined') firebase.auth().signOut();
     location.reload();
-  });
+  }
 }
 
-/* ══════════════════════════════
-   NAVIGATION PAGES
-══════════════════════════════ */
-function showPage(name) {
+/* ══════════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════════ */
+function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-  const page = document.getElementById(`page-${name}`);
-  if (page) page.classList.add('active');
-
-  const navItem = document.querySelector(`[data-page="${name}"]`);
-  if (navItem) navItem.classList.add('active');
-
+  document.getElementById('page-' + pageId).classList.add('active');
+  
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(n => n.classList.remove('active'));
+  document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+  
   const titles = {
-    dashboard: 'Tableau de bord',
-    annonces: 'Annonces',
-    utilisateurs: 'Utilisateurs',
-    signalements: 'Signalements',
-    messages: 'Messages',
-    stats: 'Statistiques',
-    publier: 'Publier une annonce',
+    'dashboard': 'Tableau de bord',
+    'annonces': 'Gestion des annonces',
+    'utilisateurs': 'Utilisateurs',
+    'signalements': 'Signalements',
+    'messages': 'Messages',
+    'stats': 'Statistiques',
+    'publier': 'Publier une annonce'
   };
-  document.getElementById('topbarTitle').textContent = titles[name] || name;
+  document.getElementById('topbarTitle').textContent = titles[pageId] || 'MALAGA Admin';
 
-  // Charger le contenu de la page
-  if (name === 'annonces') renderAnnonces();
-  if (name === 'utilisateurs') renderUsers();
-  if (name === 'signalements') renderSignalements();
-  if (name === 'messages') renderMessages();
-  if (name === 'stats') renderStats();
-
-  // Fermer sidebar mobile
-  closeSidebarMobile();
+  if (pageId === 'dashboard') loadDashboard();
+  else if (pageId === 'annonces') loadAnnonces();
+  else if (pageId === 'utilisateurs') loadUsers();
+  else if (pageId === 'signalements') loadSignalements();
+  else if (pageId === 'messages') loadMessages();
+  else if (pageId === 'stats') loadStats();
 }
 
-/* ══════════════════════════════
+/* ══════════════════════════════════════════════════════════
    DASHBOARD
-══════════════════════════════ */
+══════════════════════════════════════════════════════════ */
 function loadDashboard() {
-  // KPIs
-  const totalVues = annoncesData.reduce((s, a) => s + (a.vues || 0), 0);
-  const actives = annoncesData.filter(a => a.statut === 'disponible').length;
+  document.getElementById('kpiAnnonces').textContent = annoncesData.length;
+  document.getElementById('kpiUsers').textContent = usersData.length;
+  document.getElementById('kpiVues').textContent = annoncesData.reduce((s, a) => s + (a.vues || 0), 0).toLocaleString();
+  document.getElementById('kpiSignal').textContent = signalementsData.filter(s => !s.traite).length;
 
-  animCount('kpiAnnonces', actives);
-  animCount('kpiUsers', usersData.length);
-  animCount('kpiVues', totalVues);
-  animCount('kpiSignal', signalementsData.filter(s => !s.traite).length);
-
-  // Badges nav
-  document.getElementById('badgeAnnonces').textContent = annoncesData.length;
-  document.getElementById('badgeUsers').textContent = usersData.length;
-  const pendingSignal = signalementsData.filter(s => !s.traite).length;
-  const badgeSignal = document.getElementById('badgeSignal');
-  badgeSignal.textContent = pendingSignal;
-  badgeSignal.style.display = pendingSignal > 0 ? '' : 'none';
-
-  // Tableau dernières annonces
-  renderDashAnnonces();
-
-  // Signalements récents
-  renderDashSignalements();
-}
-
-function animCount(id, target) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  let current = 0;
-  const step = Math.ceil(target / 30);
-  const iv = setInterval(() => {
-    current = Math.min(current + step, target);
-    el.textContent = current.toLocaleString('fr-FR');
-    if (current >= target) clearInterval(iv);
-  }, 30);
-}
-
-function renderDashAnnonces() {
   const tbody = document.getElementById('dashAnnoncesBody');
-  if (!tbody) return;
-  const recents = annoncesData.slice(0, 5);
-  tbody.innerHTML = recents.map(a => `
+  tbody.innerHTML = annoncesData.slice(0, 5).map(a => `
     <tr>
-      <td><strong>${a.titre}</strong><br/><small style="color:var(--text-3)">${a.type}</small></td>
+      <td style="font-weight:700;">${a.titre.substring(0, 30)}</td>
       <td>${a.ville}</td>
-      <td>${a.prix.toLocaleString('fr-FR')} FCFA</td>
-      <td>${statutBadge(a.statut)}</td>
-      <td>
-        <button class="action-btn" onclick="changerStatut('${a.id}')">✏️ Statut</button>
-        <button class="action-btn danger" onclick="supprimerAnnonce('${a.id}')">🗑️</button>
-      </td>
+      <td>${a.prix.toLocaleString()}</td>
+      <td><span style="background:#D1FAE5;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;">${a.statut}</span></td>
+      <td><button onclick="alert('${a.titre}')" style="padding:6px 10px;background:#009E60;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Voir</button></td>
     </tr>
   `).join('');
-}
 
-function renderDashSignalements() {
-  const el = document.getElementById('dashSignalements');
-  if (!el) return;
-  const pending = signalementsData.filter(s => !s.traite);
-  if (pending.length === 0) {
-    el.innerHTML = '<p class="table-empty">✅ Aucun signalement en attente</p>';
-    return;
-  }
-  el.innerHTML = pending.map(s => `
-    <div class="signal-item">
-      <div class="signal-icon">🚨</div>
-      <div class="signal-content">
-        <div class="signal-type">${s.type}</div>
-        <div class="signal-meta">Par ${s.signalePar} — ${s.date}</div>
-        <div style="font-size:.82rem;margin-top:3px">${s.desc}</div>
+  const sigDiv = document.getElementById('dashSignalements');
+  if (signalementsData.length === 0) {
+    sigDiv.innerHTML = '<p style="color:#888;padding:20px;text-align:center;">Aucun signalement</p>';
+  } else {
+    sigDiv.innerHTML = signalementsData.slice(0, 3).map(s => `
+      <div style="padding:12px;border-bottom:1px solid #eee;font-size:13px;">
+        <strong>${s.type}</strong> - ${s.date}
+        <p style="color:#888;margin:4px 0 0 0;font-size:12px;">${s.desc}</p>
       </div>
-      <button class="action-btn" onclick="traiterSignalement('${s.id}')">✅ Traiter</button>
-    </div>
-  `).join('');
+    `).join('');
+  }
 }
 
-/* ══════════════════════════════
+/* ══════════════════════════════════════════════════════════
    ANNONCES
-══════════════════════════════ */
-function renderAnnonces(data = annoncesData) {
+══════════════════════════════════════════════════════════ */
+function loadAnnonces() {
   const tbody = document.getElementById('annoncesTableBody');
-  if (!tbody) return;
-  if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Aucune annonce trouvée</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.map(a => `
+  tbody.innerHTML = annoncesData.map(a => `
     <tr>
-      <td><small style="color:var(--text-3);font-family:monospace">${a.id}</small></td>
-      <td>
-        <strong>${a.titre}</strong><br/>
-        <small style="color:var(--text-3)">${a.type} — ${a.quartier}</small>
-      </td>
-      <td>${a.proprio || '—'}<br/><small style="color:var(--text-3)">${a.tel}</small></td>
+      <td style="font-size:11px;color:#888;">${a.id}</td>
+      <td style="font-weight:600;">${a.titre.substring(0, 20)}</td>
+      <td>${a.proprio}</td>
       <td>${a.ville}</td>
-      <td><strong>${a.prix.toLocaleString('fr-FR')}</strong> FCFA</td>
-      <td>👁️ ${(a.vues||0).toLocaleString('fr-FR')}</td>
-      <td>${statutBadge(a.statut)}</td>
-      <td style="white-space:nowrap">
-        <button class="action-btn" onclick="changerStatut('${a.id}')">✏️</button>
-        <button class="action-btn danger" onclick="supprimerAnnonce('${a.id}')">🗑️</button>
-      </td>
+      <td>${a.prix.toLocaleString()}</td>
+      <td>${a.vues.toLocaleString()}</td>
+      <td><span style="background:#D1FAE5;padding:3px 8px;border-radius:6px;font-size:11px;">${a.statut}</span></td>
+      <td><button onclick="alert('Édition: ${a.titre}')" style="padding:4px 8px;background:#3A75C4;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:11px;">Éditer</button></td>
     </tr>
   `).join('');
 }
 
 function filtrerAnnonces() {
-  const q = document.getElementById('filterAnnonce')?.value.toLowerCase() || '';
-  const statut = document.getElementById('filterStatut')?.value || '';
-  const ville = document.getElementById('filterVille')?.value || '';
-
-  const result = annoncesData.filter(a => {
-    const matchQ = !q || a.titre.toLowerCase().includes(q) || a.ville.toLowerCase().includes(q);
-    const matchS = !statut || a.statut === statut;
-    const matchV = !ville || a.ville === ville;
-    return matchQ && matchS && matchV;
-  });
-  renderAnnonces(result);
+  loadAnnonces();
 }
 
-function changerStatut(id) {
-  const annonce = annoncesData.find(a => a.id === id);
-  if (!annonce) return;
-  const statuts = ['disponible', 'réservé', 'loué', 'masqué'];
-  const idx = statuts.indexOf(annonce.statut);
-  const next = statuts[(idx + 1) % statuts.length];
-  confirmer('Changer le statut', `Passer l'annonce de "${annonce.statut}" à "${next}" ?`, () => {
-    annonce.statut = next;
-    // Firestore : firebase.firestore().collection('annonces').doc(id).update({ statut: next })
-    renderAnnonces();
-    renderDashAnnonces();
-    afficherToast(`✅ Statut changé : ${next}`);
-  });
-}
-
-function supprimerAnnonce(id) {
-  const annonce = annoncesData.find(a => a.id === id);
-  if (!annonce) return;
-  confirmer('Supprimer l\'annonce', `Supprimer définitivement "${annonce.titre}" ?`, () => {
-    annoncesData = annoncesData.filter(a => a.id !== id);
-    // Firestore : firebase.firestore().collection('annonces').doc(id).delete()
-    renderAnnonces();
-    renderDashAnnonces();
-    loadDashboard();
-    afficherToast('🗑️ Annonce supprimée');
-  });
-}
-
-/* ══════════════════════════════
+/* ══════════════════════════════════════════════════════════
    UTILISATEURS
-══════════════════════════════ */
-function renderUsers(data = usersData) {
+══════════════════════════════════════════════════════════ */
+function loadUsers() {
   const tbody = document.getElementById('usersTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = data.map(u => `
+  tbody.innerHTML = usersData.map(u => `
     <tr>
-      <td><strong>${u.nom}</strong></td>
+      <td style="font-weight:600;">${u.nom}</td>
       <td>${u.email}</td>
       <td>${u.tel}</td>
-      <td>${roleBadge(u.role)}</td>
-      <td><small>${u.date}</small></td>
-      <td>
-        <button class="action-btn" onclick="afficherToast('Fonctionnalité bientôt disponible')">✉️ Contacter</button>
-        ${u.role !== 'admin' ? `<button class="action-btn danger" onclick="afficherToast('Bannir : bientôt disponible')">🚫</button>` : ''}
-      </td>
+      <td><span style="background:#DBEAFE;padding:2px 8px;border-radius:6px;font-size:11px;color:#1E40AF;">${u.role}</span></td>
+      <td>${u.date}</td>
+      <td><button onclick="alert('${u.nom}')" style="padding:4px 8px;background:#EF4444;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:11px;">Supprimer</button></td>
     </tr>
   `).join('');
 }
 
-function filtrerUsers() {
-  const q = document.getElementById('filterUser')?.value.toLowerCase() || '';
-  const role = document.getElementById('filterRole')?.value || '';
-  const result = usersData.filter(u => {
-    const matchQ = !q || u.nom.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-    const matchR = !role || u.role === role;
-    return matchQ && matchR;
-  });
-  renderUsers(result);
-}
-
-/* ══════════════════════════════
+/* ══════════════════════════════════════════════════════════
    SIGNALEMENTS
-══════════════════════════════ */
-function renderSignalements() {
+══════════════════════════════════════════════════════════ */
+function loadSignalements() {
   const tbody = document.getElementById('signalementsBody');
-  if (!tbody) return;
-  if (signalementsData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Aucun signalement</td></tr>';
-    return;
-  }
   tbody.innerHTML = signalementsData.map(s => `
     <tr>
-      <td><small>${s.date}</small></td>
-      <td><span class="badge badge-red">${s.type}</span></td>
-      <td><small style="font-family:monospace">${s.annonce}</small></td>
+      <td>${s.date}</td>
+      <td style="font-weight:600;">${s.type}</td>
+      <td>${s.annonce}</td>
       <td>${s.signalePar}</td>
-      <td style="max-width:200px;font-size:.82rem">${s.desc}</td>
+      <td style="font-size:12px;">${s.desc}</td>
       <td>
-        ${s.traite
-          ? '<span class="badge badge-green">✅ Traité</span>'
-          : `<button class="action-btn" onclick="traiterSignalement('${s.id}')">✅ Traiter</button>
-             <button class="action-btn danger" onclick="supprimerAnnonce('${s.annonce}')">🗑️ Suppr. annonce</button>`
-        }
+        <button onclick="marquerTraite('${s.id}')" style="padding:4px 8px;background:#009E60;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:11px;">
+          ${s.traite ? 'Traité' : 'Traiter'}
+        </button>
       </td>
     </tr>
   `).join('');
 }
 
-function traiterSignalement(id) {
+function marquerTraite(id) {
   const sig = signalementsData.find(s => s.id === id);
-  if (!sig) return;
-  confirmer('Marquer comme traité', `Marquer le signalement "${sig.type}" comme traité ?`, () => {
-    sig.traite = true;
-    renderSignalements();
-    renderDashSignalements();
-    loadDashboard();
-    afficherToast('✅ Signalement traité');
-  });
+  if (sig) sig.traite = true;
+  loadSignalements();
 }
 
-/* ══════════════════════════════
+/* ══════════════════════════════════════════════════════════
    MESSAGES
-══════════════════════════════ */
-function renderMessages() {
+══════════════════════════════════════════════════════════ */
+function loadMessages() {
   const tbody = document.getElementById('messagesBody');
-  if (!tbody) return;
-  if (messagesData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Aucun message</td></tr>';
-    return;
-  }
-  tbody.innerHTML = messagesData.map((m, i) => `
+  tbody.innerHTML = messagesData.map(m => `
     <tr>
-      <td><small>${m.date}</small></td>
-      <td><strong>${m.nom}</strong></td>
+      <td>${m.date}</td>
+      <td style="font-weight:600;">${m.nom}</td>
       <td>${m.tel}</td>
-      <td><span class="badge badge-blue">${m.sujet}</span></td>
-      <td style="max-width:220px;font-size:.82rem">${m.msg}</td>
-      <td>
-        <a class="action-btn" href="https://wa.me/${m.tel.replace(/\s/g,'')}" target="_blank">💬 WA</a>
-        <button class="action-btn danger" onclick="supprimerMessage(${i})">🗑️</button>
-      </td>
+      <td>${m.sujet}</td>
+      <td style="font-size:12px;max-width:200px;">${m.msg.substring(0, 50)}...</td>
+      <td><button onclick="alert('${m.msg}')" style="padding:4px 8px;background:#3A75C4;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:11px;">Lire</button></td>
     </tr>
   `).join('');
 }
 
-function supprimerMessage(i) {
-  confirmer('Supprimer le message', 'Supprimer définitivement ce message ?', () => {
-    messagesData.splice(i, 1);
-    renderMessages();
-    afficherToast('🗑️ Message supprimé');
-  });
-}
-
-/* ══════════════════════════════
+/* ══════════════════════════════════════════════════════════
    STATISTIQUES
-══════════════════════════════ */
-function renderStats() {
-  // Par ville
-  const villes = {};
-  annoncesData.forEach(a => { villes[a.ville] = (villes[a.ville]||0) + 1; });
-  renderBarChart('chartVilles', villes, 'green');
-
-  // Par type
-  const types = {};
-  annoncesData.forEach(a => { types[a.type] = (types[a.type]||0) + 1; });
-  renderBarChart('chartTypes', types, 'blue');
-
-  // Par statut
-  const statuts = {};
-  annoncesData.forEach(a => { statuts[a.statut] = (statuts[a.statut]||0) + 1; });
-  renderBarChart('chartStatuts', statuts, 'yellow');
-
-  // Top vues
-  const top5 = [...annoncesData].sort((a,b) => b.vues - a.vues).slice(0,5);
-  const topObj = {};
-  top5.forEach(a => { topObj[a.titre.substring(0,20)+'…'] = a.vues; });
-  renderBarChart('chartTop', topObj, 'green');
+══════════════════════════════════════════════════════════ */
+function loadStats() {
+  alert('📊 Statistiques:\n- Total annonces: ' + annoncesData.length + '\n- Total utilisateurs: ' + usersData.length + '\n- Signalements non traités: ' + signalementsData.filter(s => !s.traite).length);
 }
 
-function renderBarChart(elId, data, color) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  const max = Math.max(...Object.values(data), 1);
-  el.innerHTML = Object.entries(data).map(([label, val]) => `
-    <div class="chart-row">
-      <span class="chart-label">${label}</span>
-      <div class="chart-bar-wrap">
-        <div class="chart-bar ${color}" style="width:${Math.round(val/max*100)}%"></div>
-      </div>
-      <span class="chart-val">${val}</span>
-    </div>
-  `).join('');
-}
-
-/* ══════════════════════════════
+/* ══════════════════════════════════════════════════════════
    PUBLICATION ANNONCE
-══════════════════════════════ */
-async function publierAnnonce() {
-  const type     = document.getElementById('pubType')?.value;
-  const ville    = document.getElementById('pubVille')?.value;
-  const quartier = document.getElementById('pubQuartier')?.value?.trim();
-  const prix     = parseInt(document.getElementById('pubPrix')?.value || '0');
-  const titre    = document.getElementById('pubTitre')?.value?.trim();
-  const tel      = document.getElementById('pubTel')?.value?.trim();
-  const statut   = document.getElementById('pubStatut')?.value || 'disponible';
+══════════════════════════════════════════════════════════ */
+function publierAnnonce() {
+  const titre = document.getElementById('pubTitre').value;
+  const type = document.getElementById('pubType').value;
+  const ville = document.getElementById('pubVille').value;
+  const quartier = document.getElementById('pubQuartier').value;
+  const prix = document.getElementById('pubPrix').value;
+  const tel = document.getElementById('pubTel').value;
 
-  if (!type || !ville || !quartier || !prix || !titre || !tel) {
-    afficherToast('⚠️ Remplissez tous les champs obligatoires (*)');
+  if (!titre || !type || !ville || !quartier || !prix || !tel) {
+    alert('⚠️ Remplissez tous les champs obligatoires (*)');
     return;
   }
-
-  const tags = [...document.querySelectorAll('#tagsPicker input:checked')].map(i => i.value);
-  const desc = document.getElementById('pubDesc')?.value?.trim() || '';
-  const surface = parseInt(document.getElementById('pubSurface')?.value || '0');
-  const chambres = parseInt(document.getElementById('pubChambres')?.value || '0');
-  const sdb = parseInt(document.getElementById('pubSdb')?.value || '0');
-
-  const btn = document.getElementById('pubBtnText');
-  btn.textContent = '⏳ Publication en cours...';
 
   const newAnnonce = {
     id: 'ann' + Date.now(),
-    titre, type, ville, quartier, prix,
-    surface, chambres, sallesDeau: sdb,
-    tags, statut, tel, proprio: 'Admin',
-    desc, vues: 0,
-    dateCreation: new Date().toLocaleDateString('fr-FR'),
+    titre, type, ville, quartier,
+    prix: parseInt(prix),
+    tel,
+    surface: parseInt(document.getElementById('pubSurface').value) || 0,
+    chambres: parseInt(document.getElementById('pubChambres').value) || 0,
+    sdb: parseInt(document.getElementById('pubSdb').value) || 0,
+    desc: document.getElementById('pubDesc').value,
+    statut: document.getElementById('pubStatut').value || 'disponible',
+    proprio: 'Admin',
+    vues: 0,
+    dateCreation: new Date().toISOString().split('T')[0]
   };
 
-  try {
-    if (typeof firebase !== 'undefined' && firebase.firestore) {
-      await firebase.firestore().collection('annonces').doc(newAnnonce.id).set(newAnnonce);
-    }
-    annoncesData.unshift(newAnnonce);
-    loadDashboard();
-    afficherToast('✅ Annonce publiée avec succès !');
-    resetForm();
-    showPage('annonces');
-  } catch (err) {
-    afficherToast('❌ Erreur lors de la publication');
-    console.error(err);
-  } finally {
-    btn.textContent = '📤 Publier l\'annonce';
-  }
-}
-
-async function genererTitreIA() {
-  const type     = document.getElementById('pubType')?.value;
-  const ville    = document.getElementById('pubVille')?.value;
-  const quartier = document.getElementById('pubQuartier')?.value?.trim();
-  const prix     = document.getElementById('pubPrix')?.value;
-  const surface  = document.getElementById('pubSurface')?.value;
-  const chambres = document.getElementById('pubChambres')?.value;
-  const tags = [...document.querySelectorAll('#tagsPicker input:checked')].map(i => i.value);
-
-  if (!type || !ville) {
-    afficherToast('⚠️ Choisissez au moins le type et la ville');
-    return;
-  }
-
-  const btn = document.querySelector('.btn-ia-gen');
-  btn.textContent = '⏳ Génération en cours...';
-
-  const prompt = `Génère un titre accrocheur et une description professionnelle pour une annonce immobilière gabonaise.
-Type de bien : ${type}
-Ville : ${ville}
-Quartier : ${quartier || 'non précisé'}
-Prix : ${prix ? prix + ' FCFA/mois' : 'non précisé'}
-Surface : ${surface ? surface + ' m²' : 'non précisée'}
-Chambres : ${chambres || 'non précisé'}
-Équipements : ${tags.length ? tags.join(', ') : 'non précisés'}
-
-Réponds UNIQUEMENT en JSON avec ce format exact :
-{"titre": "...", "description": "..."}
-Le titre doit faire max 60 caractères. La description doit faire 80-120 mots. Sois précis et professionnel.`;
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: 'Tu es un expert en immobilier gabonais. Réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après.',
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    const data = await response.json();
-    const text = data.content?.map(c => c.text || '').join('') || '{}';
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-
-    if (parsed.titre) document.getElementById('pubTitre').value = parsed.titre;
-    if (parsed.description) document.getElementById('pubDesc').value = parsed.description;
-    afficherToast('✨ Titre et description générés par l\'IA !');
-  } catch (err) {
-    afficherToast('❌ Erreur IA. Réessayez.');
-    console.error(err);
-  } finally {
-    btn.textContent = '✨ Générer titre et description avec l\'IA';
-  }
+  annoncesData.unshift(newAnnonce);
+  alert('✅ Annonce publiée avec succès !');
+  resetForm();
+  showPage('annonces');
 }
 
 function resetForm() {
-  ['pubType','pubVille','pubQuartier','pubPrix','pubSurface','pubChambres','pubSdb','pubTel','pubTitre','pubDesc'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.querySelectorAll('#tagsPicker input').forEach(i => i.checked = false);
+  document.getElementById('pubTitre').value = '';
+  document.getElementById('pubType').value = '';
+  document.getElementById('pubVille').value = '';
+  document.getElementById('pubQuartier').value = '';
+  document.getElementById('pubPrix').value = '';
+  document.getElementById('pubTel').value = '';
+  document.getElementById('pubDesc').value = '';
 }
 
-/* ══════════════════════════════
-   HELPERS UI
-══════════════════════════════ */
-function statutBadge(statut) {
-  const map = {
-    'disponible': '<span class="badge badge-green">🟢 Disponible</span>',
-    'réservé':    '<span class="badge badge-yellow">🟡 Réservé</span>',
-    'loué':       '<span class="badge badge-red">🔴 Loué</span>',
-    'masqué':     '<span class="badge badge-gray">⚫ Masqué</span>',
-  };
-  return map[statut] || `<span class="badge badge-gray">${statut}</span>`;
+function genererTitreIA() {
+  alert('✨ Génération IA activée\n(Nécessite une API, configurez votre clé dans ia-helper.js)');
 }
 
-function roleBadge(role) {
-  const map = {
-    admin:        '<span class="badge badge-green">Admin</span>',
-    proprietaire: '<span class="badge badge-blue">Propriétaire</span>',
-    locataire:    '<span class="badge badge-gray">Locataire</span>',
-  };
-  return map[role] || `<span class="badge badge-gray">${role}</span>`;
-}
-
-/* ══════════════════════════════
-   THÈME
-══════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   UTILITAIRES UI
+══════════════════════════════════════════════════════════ */
 function initTheme() {
   document.documentElement.setAttribute('data-theme', theme);
-  updateThemeBtn();
 }
 
 function toggleTheme() {
   theme = theme === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('malaga_admin_theme', theme);
-  updateThemeBtn();
+  location.reload();
 }
 
-function updateThemeBtn() {
-  const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-}
-
-/* ══════════════════════════════
-   SIDEBAR MOBILE
-══════════════════════════════ */
-function initSidebar() {
-  document.getElementById('burgerAdmin')?.addEventListener('click', () => {
-    document.getElementById('sidebar').classList.add('open');
-  });
-  document.getElementById('sidebarClose')?.addEventListener('click', closeSidebarMobile);
-}
-
-function closeSidebarMobile() {
-  document.getElementById('sidebar')?.classList.remove('open');
-}
-
-/* ══════════════════════════════
-   TOPBAR DATE
-══════════════════════════════ */
 function initTopbarDate() {
-  const el = document.getElementById('topbarDate');
-  if (!el) return;
-  const now = new Date();
-  el.textContent = now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const d = new Date();
+  const options = { weekday: 'long', day: 'numeric', month: 'long' };
+  document.getElementById('topbarDate').textContent = d.toLocaleDateString('fr-FR', options);
 }
 
-/* ══════════════════════════════
-   MODAL CONFIRMATION
-══════════════════════════════ */
-let confirmCallback = null;
+function initSidebar() {
+  const burger = document.getElementById('burgerAdmin');
+  const sidebar = document.getElementById('sidebar');
+  const close = document.getElementById('sidebarClose');
+
+  if (burger) burger.onclick = () => sidebar.style.transform = 'translateX(0)';
+  if (close) close.onclick = () => sidebar.style.transform = 'translateX(-100%)';
+}
 
 function confirmer(title, msg, callback) {
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalMsg').textContent = msg;
-  document.getElementById('modalOverlay') || (document.getElementById('modalConfirm').id = 'modalConfirm');
-  document.getElementById('modalConfirm').classList.remove('hidden');
-  confirmCallback = callback;
-  document.getElementById('modalConfirmBtn').onclick = () => {
-    fermerModal();
-    if (confirmCallback) confirmCallback();
-  };
+  if (confirm(msg)) callback();
 }
 
-function fermerModal() {
-  document.getElementById('modalConfirm').classList.add('hidden');
-  confirmCallback = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  if (el) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3000);
+  }
 }
 
-/* ══════════════════════════════
-   TOAST
-══════════════════════════════ */
-let toastTimer;
-function afficherToast(msg) {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
-  toast.textContent = msg;
-  toast.classList.remove('hidden');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.add('hidden'), 3000);
-}
+// Charger le dashboard au démarrage
+window.addEventListener('load', () => {
+  if (currentUser) loadDashboard();
+});
