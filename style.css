@@ -1,0 +1,170 @@
+/* ===== MALAGA — STYLE PRINCIPAL ===== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --vert: #009E60;
+  --jaune: #FCD116;
+  --bleu: #3A75C4;
+  --blanc: #ffffff;
+  --gris: #f5f5f5;
+  --texte: #333333;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--gris);
+  color: var(--texte);
+}
+
+/* HEADER */
+.header {
+  background: var(--vert);
+  padding: 15px 20px;
+  text-align: center;
+  color: white;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.logo {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--jaune);
+  letter-spacing: 3px;
+}
+
+.slogan {
+  font-size: 13px;
+  color: rgba(255,255,255,0.9);
+}
+
+/* HERO */
+.hero {
+  background: var(--bleu);
+  padding: 30px 20px;
+  text-align: center;
+  color: white;
+}
+
+.hero h1 {
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.search-bar {
+  display: flex;
+  gap: 8px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 12px 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.search-bar button {
+  padding: 12px 18px;
+  background: var(--jaune);
+  color: var(--texte);
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ANNONCES */
+.annonces-section {
+  padding: 20px;
+}
+
+.annonces-section h2 {
+  color: var(--vert);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.grille-annonces {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.carte-annonce {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.carte-annonce img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.carte-info {
+  padding: 15px;
+}
+
+.carte-info h3 {
+  font-size: 15px;
+  margin-bottom: 5px;
+  color: var(--texte);
+}
+
+.prix {
+  color: var(--vert);
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.localisation {
+  color: #888;
+  font-size: 13px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.badge-disponible { background: #e8f5e9; color: var(--vert); }
+.badge-reserve { background: #fff8e1; color: #f57f17; }
+.badge-loue { background: #ffebee; color: #c62828; }
+
+/* FOOTER */
+.footer {
+  background: var(--texte);
+  color: white;
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  line-height: 2;
+  margin-top: 30px;
+  }
