@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MALAGA — Maison À Louer Au Gabon</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <header class="header">
+      <div class="logo-container">
+        <img src="logo.png" alt="MALAGA" class="logo">
+        <span class="logo-text">MALAGA</span>
+      </div>
+      <p class="slogan">Votre maison à louer partout au Gabon</p>
+    </header>
+
+    <main id="main-content">
+
+      <section class="hero">
+        <h1>Trouvez votre logement au Gabon</h1>
+        <div class="search-bar">
+          <input type="text" id="search-input" 
+            placeholder="Ville, quartier, type de bien...">
+          <button onclick="rechercherAnnonces()">🔍 Rechercher</button>
+        </div>
+      </section>
+
+      <section class="annonces-section">
+        <h2>Annonces récentes</h2>
+        <div id="liste-annonces" class="grille-annonces">
+          <p>Chargement des annonces...</p>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <p>📞 +241 6 65 80 32</p>
+      <p>✉️ malaga.gabon@gmail.com</p>
+      <p>MALAGA © 2026 — Développé par PC-INFORMATIQUE</p>
+      <p>Libreville — Gabon 🇬🇦</p>
+    </footer>
+
+  </div>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
